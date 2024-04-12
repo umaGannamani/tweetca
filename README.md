@@ -1,5 +1,4 @@
-//APP JS FILE
-
+// APP.JS
 const express = require('express')
 const {open} = require('sqlite')
 const sqlite3 = require('sqlite3')
@@ -49,7 +48,7 @@ app.post('/register/', async (request, response) => {
 })
 const authenticateToken = (request, response, next) => {
   let jwtToken
-  const authHeader = request.header['authorization']
+  const authHeader = request.headers['authorization']
   if (authHeader !== undefined) {
     jwtToken = authHeader.split(' ')[1]
   }
@@ -173,7 +172,6 @@ app.get('/tweets/:tweetId/', authenticateToken, async (request, response) => {
 app.get(
   '/tweets/:tweetId/likes/',
   authenticateToken,
-  isUserFollowing,
   async (request, response) => {
     const {tweetId} = request.params
     const query = `SELECT username FROM like NATURAL JOIN user WHERE tweet_id = ${tweetId};`
@@ -187,7 +185,6 @@ app.get(
 app.get(
   '/tweets/:tweetId/replies/',
   authenticateToken,
-  isUserFollowing,
   async (request, response) => {
     const {tweetId} = request.params
     const query = `SELECT name, reply FROM reply NATURAL JOIN user WHERE tweet_id = ${tweetId};`
@@ -203,7 +200,7 @@ app.get('/user/tweets/', authenticateToken, async (request, response) => {
   const dbUser = await db.get(getUserQuery)
   const userId = dbUser['user_id']
   const query = `SELECT tweet, COUNT() AS likes, date_time AS dateTime FROM tweet INNER JOIN like ON tweet.tweet_id = like.tweet_id
-  WHERE tweet.user_id = ${user_id} GROUP BY tweet.tweet_id;`
+  WHERE tweet.user_id = ${userId} GROUP BY tweet.tweet_id;`
   let likesData = await db.all(query)
   const repliesQuery = `SELECT tweet, COUNT() AS replies FROM tweet INNER JOIN reply ON tweet.tweet_id = reply.tweet_id
   WHERE tweet.user_id = ${userId} GROUP BY tweet.tweet_id;`
@@ -241,11 +238,11 @@ app.delete(
     const getUserQuery = `SELECT * FROM user WHERE username = '${username}';`
     const dbUser = await db.get(getUserQuery)
     const userId = dbUser['user_id']
-    const userTweetsQuery = `SELECT tweet_id, user_id FROM tweet WHERE user_id = ${userId};`
+    const userTweetsQuery = `SELECT tweet_id FROM tweet WHERE user_id = ${userId};`
     const userTweetsData = await db.all(userTweetsQuery)
     let isTweetUsers = false
     userTweetsData.forEach(each => {
-      if (each['tweet_id'] === tweetId) {
+      if (each['tweet_id'] == tweetId) {
         isTweetUsers = true
       }
     })
@@ -262,8 +259,7 @@ app.delete(
 module.exports = app
 
 
-// APP HTTP FILE
-
+// APP.HTTP
 // API 1
 POST http://localhost:3000/register/
 Content-Type:application/json
@@ -286,49 +282,48 @@ Content-Type:application/json
 
 //API 3
 GET http://localhost:3000/user/tweets/feed/
-Authorization: Bearer "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkpvZUJpZGVuIiwiaWF0IjoxNzEyODE1NDA4fQ.LN7x-SpZxCOXTgwhtpfcK3mn6QhSEJjrOm7XiSoph4k"
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkpvZUJpZGVuIiwiaWF0IjoxNzEyODM1NTk1fQ.WWMiOUrjUUdyjokAUayu4IfaZM7P8cW8qdvtAwIGv20
 ###
 //API 4
 GET http://localhost:3000/user/following/
-Authorization: Bearer "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkpvZUJpZGVuIiwiaWF0IjoxNzEyODE1ODYzfQ.wtqZ1SNoXzk1nu_82IBgC4fq1Uy9BW553MiARxoQPtw"
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkpvZUJpZGVuIiwiaWF0IjoxNzEyODM1NTk1fQ.WWMiOUrjUUdyjokAUayu4IfaZM7P8cW8qdvtAwIGv20
 ###
 
 //API 5
 GET http://localhost:3000/user/followers/
-Authorization: Bearer "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkpvZUJpZGVuIiwiaWF0IjoxNzEyODE1ODYzfQ.wtqZ1SNoXzk1nu_82IBgC4fq1Uy9BW553MiARxoQPtw"
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkpvZUJpZGVuIiwiaWF0IjoxNzEyODM1NTk1fQ.WWMiOUrjUUdyjokAUayu4IfaZM7P8cW8qdvtAwIGv20
 ###
 
 // API 6
-GET http://localhost:3000/tweets/:tweetId/
-Authorization: Bearer "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkpvZUJpZGVuIiwiaWF0IjoxNzEyODE1ODYzfQ.wtqZ1SNoXzk1nu_82IBgC4fq1Uy9BW553MiARxoQPtw"
+GET http://localhost:3000/tweets/1/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkpvZUJpZGVuIiwiaWF0IjoxNzEyODM1NTk1fQ.WWMiOUrjUUdyjokAUayu4IfaZM7P8cW8qdvtAwIGv20
 ###
 
 // API 7
-GET http://localhost:3000/tweets/:tweetId/likes/
-Authorization: Bearer "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkpvZUJpZGVuIiwiaWF0IjoxNzEyODE1ODYzfQ.wtqZ1SNoXzk1nu_82IBgC4fq1Uy9BW553MiARxoQPtw"
+GET http://localhost:3000/tweets/1/likes/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkpvZUJpZGVuIiwiaWF0IjoxNzEyODM1NTk1fQ.WWMiOUrjUUdyjokAUayu4IfaZM7P8cW8qdvtAwIGv20
 ###
 
 // API 8
-GET http://localhost:3000/tweets/:tweetId/replies/
-Authorization: Bearer "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkpvZUJpZGVuIiwiaWF0IjoxNzEyODE1ODYzfQ.wtqZ1SNoXzk1nu_82IBgC4fq1Uy9BW553MiARxoQPtw"
+GET http://localhost:3000/tweets/1/replies/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkpvZUJpZGVuIiwiaWF0IjoxNzEyODM1NTk1fQ.WWMiOUrjUUdyjokAUayu4IfaZM7P8cW8qdvtAwIGv20
 ###
 
 // API 9
 GET http://localhost:3000/user/tweets/
-Authorization: Bearer "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkpvZUJpZGVuIiwiaWF0IjoxNzEyODE1ODYzfQ.wtqZ1SNoXzk1nu_82IBgC4fq1Uy9BW553MiARxoQPtw"
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkpvZUJpZGVuIiwiaWF0IjoxNzEyODM1NTk1fQ.WWMiOUrjUUdyjokAUayu4IfaZM7P8cW8qdvtAwIGv20
 ###
 
 // API 10
 POST http://localhost:3000/user/tweets/
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkpvZUJpZGVuIiwiaWF0IjoxNzEyODM1NTk1fQ.WWMiOUrjUUdyjokAUayu4IfaZM7P8cW8qdvtAwIGv20
 {
    "tweet": "The Mornings..."
 }
-Content-Type: application/json
-Authorization: Bearer "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkpvZUJpZGVuIiwiaWF0IjoxNzEyODE1ODYzfQ.wtqZ1SNoXzk1nu_82IBgC4fq1Uy9BW553MiARxoQPtw"
 ###
 
 // API 11
-DELETE http://localhost:3000/tweets/:tweetId/
-Authorization: Bearer "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkpvZUJpZGVuIiwiaWF0IjoxNzEyODE1ODYzfQ.wtqZ1SNoXzk1nu_82IBgC4fq1Uy9BW553MiARxoQPtw"
+DELETE http://localhost:3000/tweets/3/
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkpvZUJpZGVuIiwiaWF0IjoxNzEyODM1NTk1fQ.WWMiOUrjUUdyjokAUayu4IfaZM7P8cW8qdvtAwIGv20
 ###
-
